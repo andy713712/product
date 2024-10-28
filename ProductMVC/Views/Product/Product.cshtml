@@ -1,0 +1,303 @@
+﻿@{
+    ViewData["Title"] = "Product";
+}
+
+<div class="text-center">
+    <button id="select-products-btn" class="btn btn-outline-dark">查詢產品清單</button>
+
+    <table class="table" id="product-table" style="display:none;">
+        <thead>
+            <tr>
+                <th>ProductID</th>
+                <th>Name</th>
+                <th>ProductNumber</th>
+                <th>Color</th>
+                <th>StandardCost</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <div class="modal bd-example-modal-lg" tabindex="-1" role="dialog" id="SubmitModal">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">更新產品</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="cancelProduct()">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="modalContent">
+                    <form id="modal_form" action="@Url.Action("submitProduct")" method="post" enctype="multipart/form-data">
+                        <table id="ModalContentTable">
+                            <tr style="background-color: white">
+                                <td width="120px"><span style="color: red">*</span>Name：</td>
+                                <td colspan="2"><input type="text" class="form-control" maxlength="50" id="Modal_NAME" name="Modal_NAME"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px"><span style="color: red">*</span>ProductNumber：</td>
+                                <td colspan="2"><input type="text" class="form-control" maxlength="25" id="Modal_PRODUCT_NUMBER" name="Modal_PRODUCT_NUMBER"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px">Color：</td>
+                                <td colspan="2"><input type="text" class="form-control" maxlength="15" id="Modal_COLOR" name="Modal_COLOR"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px"><span style="color: red">*</span>StandardCost：</td>
+                                <td colspan="2"><input type="text" class="form-control" id="Modal_STANDARD_COST" name="Modal_STANDARD_COST"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px"><span style="color: red">*</span>ListPrice：</td>
+                                <td colspan="2"><input type="text" class="form-control" id="Modal_LIST_PRICE" name="Modal_LIST_PRICE"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px">Size：</td>
+                                <td colspan="2"><input type="text" class="form-control" maxlength="5" id="Modal_SIZE" name="Modal_SIZE"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px">Weight：</td>
+                                <td colspan="2"><input type="text" class="form-control" maxlength="8" id="Modal_WEIGHT" name="Modal_WEIGHT"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px"><span style="color: red">*</span>SellStartDate：</td>
+                                <td colspan="2"><input type="text" class="form-control" id="Modal_SELL_START_DATE" name="Modal_SELL_START_DATE"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px">SellEndDate：</td>
+                                <td colspan="2"><input type="text" class="form-control" id="Modal_SELL_END_DATE" name="Modal_SELL_END_DATE"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px">DiscontinuedDate：</td>
+                                <td colspan="2"><input type="text" class="form-control" id="Modal_DISCONTINUED_DATE" name="Modal_DISCONTINUED_DATE"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px">ThumbNailPhoto：</td>
+                                <td colspan="2"><input type="text" class="form-control" id="Modal_THUMBNAIL_PHOTO" name="Modal_THUMBNAIL_PHOTO"></td>
+                            </tr>
+                            <tr style="background-color: white">
+                                <td width="120px">ThumbnailPhotoFileName：</td>
+                                <td colspan="2"><input type="text" class="form-control" maxlength="50" id="Modal_THUMBNAIL_PHOTO_FILE_NAME" name="Modal_THUMBNAIL_PHOTO_FILE_NAME"></td>
+                            </tr>
+                        </table>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" onclick="cancelProduct()">取消</button>
+                    <button type="button" class="btn btn-success" onclick="submitProduct()">儲存</button>
+                    <input id="sbPRODUCT_PID" hidden />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        //查詢產品清單
+        $('#select-products-btn').click(function () {
+            $.ajax({
+                url: '@Url.Action("QueryProductList", "Product")',
+                type: 'GET',
+                success: function (data) {
+                    var tableBody = $('#product-table tbody');
+                    tableBody.empty();
+
+                    $.each(data, function (index, product) {
+                        var row = '<tr>' +
+                            '<td>' + product.productID + '</td>' +
+                            '<td>' + product.name + '</td>' +
+                            '<td>' + product.productNumber + '</td>' +
+                            '<td>' + product.color + '</td>' +
+                            '<td>' + product.standardCost + '</td>' +
+                            '<td><a href="javascript:void(0);" class="btn btn-outline-dark" onclick="sbItem(' + product.productID + ')">編輯</a></td>' +
+                            '</tr>';
+                        tableBody.append(row);
+                    });
+
+                    $('#product-table').show();
+                },
+                error: function () {
+                    alert("Error retrieving data.");
+                }
+            });
+        });
+    });
+
+    // 編輯
+    function sbItem(obj) {
+        // <更新產品> 的表單視窗
+        $('#SubmitModal').modal('show')
+
+        $("#sbPRODUCT_PID").val(obj);
+
+        var formData = {
+            product_pid: $('#sbPRODUCT_PID').val()
+        };
+
+        $.ajax({
+            url: '@Url.Action("GetProduct", "Product")',
+            type: 'POST',
+            data: formData,
+            success: function (data) {
+                if (data && typeof data === "object") {
+                    if (data.productID) {
+                        $("#Modal_NAME").val(data.name);           
+                        $("#Modal_PRODUCT_NUMBER").val(data.productNumber);
+                        $("#Modal_COLOR").val(data.color);
+                        $("#Modal_STANDARD_COST").val(data.standardCost);
+                        $("#Modal_LIST_PRICE").val(data.listPrice);
+                        $("#Modal_SIZE").val(data.size);
+                        $("#Modal_WEIGHT").val(data.weight);
+                        $("#Modal_SELL_START_DATE").val(formatDate(data.sellStartDate));
+                        $("#Modal_SELL_END_DATE").val(formatDate(data.sellEndDate));
+                        $("#Modal_DISCONTINUED_DATE").val(formatDate(data.discontinuedDate));
+                        $("#Modal_THUMBNAIL_PHOTO").val(data.thumbNailPhoto);
+                        $("#Modal_THUMBNAIL_PHOTO_FILE_NAME").val(data.thumbnailPhotoFileName);
+                    } else {
+                        alert("Product not found.");
+                    }
+                } else {
+                    alert("GetProduct returned no product data.");
+                }
+            },
+            error: function () {
+                alert("GetProduct fail");
+            }
+        });
+    }
+
+    // 儲存
+    function submitProduct() {
+        var chkMsg = "";
+
+        var Modal_NAME = $('#Modal_NAME').val();
+        var Modal_PRODUCT_NUMBER = $('#Modal_PRODUCT_NUMBER').val();
+        var Modal_COLOR = $('#Modal_COLOR').val();
+        var Modal_STANDARD_COST = $('#Modal_STANDARD_COST').val();
+        var Modal_LIST_PRICE = $('#Modal_LIST_PRICE').val();
+        var Modal_SIZE = $('#Modal_SIZE').val();
+        var Modal_WEIGHT = $('#Modal_WEIGHT').val();
+        var Modal_SELL_START_DATE = $('#Modal_SELL_START_DATE').val();
+        var Modal_SELL_END_DATE = $('#Modal_SELL_END_DATE').val();
+        var Modal_DISCONTINUED_DATE = $('#Modal_DISCONTINUED_DATE').val();
+        var Modal_THUMBNAIL_PHOTO = $('#Modal_THUMBNAIL_PHOTO').val();
+        var Modal_THUMBNAIL_PHOTO_FILE_NAME = $('#Modal_THUMBNAIL_PHOTO_FILE_NAME').val();
+
+        if (Modal_NAME.length == 0)
+            chkMsg += "Name 不可為空。\r\n";
+        if (Modal_PRODUCT_NUMBER.length == 0)
+            chkMsg += "ProductNumber 不可為空。\r\n";
+        if (Modal_STANDARD_COST.length == 0)
+            chkMsg += "StandardCost 不可為空。\r\n";
+        if (Modal_LIST_PRICE.length == 0)
+            chkMsg += "ListPrice 不可為空。\r\n";
+        if (Modal_SELL_START_DATE.length == 0)
+            chkMsg += "SellStartDate 不可為空。\r\n";
+
+        if (chkMsg.length > 0) {
+            alert("錯誤訊息: \r\n" + chkMsg);
+            return;
+        }
+
+        var formData = {
+            pid: $('#sbPRODUCT_PID').val(),
+            name: $('#Modal_NAME').val(),
+            number: $('#Modal_PRODUCT_NUMBER').val(),
+            color: $('#Modal_COLOR').val(),
+            standard_cost: $('#Modal_STANDARD_COST').val(),
+            list_price: $('#Modal_LIST_PRICE').val(),
+            size: $('#Modal_SIZE').val(),
+            weight: $('#Modal_WEIGHT').val(),
+            sell_start_date: $('#Modal_SELL_START_DATE').val(),
+            sell_end_date: $('#Modal_SELL_END_DATE').val(),
+            discontinued_date: $('#Modal_DISCONTINUED_DATE').val(),
+            thumbnail_photo: $('#Modal_THUMBNAIL_PHOTO').val(),
+            thumbnail_photo_file_name: $('#Modal_THUMBNAIL_PHOTO_FILE_NAME').val()
+        };
+        $.ajax({
+            url: '@Url.Action("UpdateProduct", "Product")',
+            type: 'POST',
+            data: formData,
+            success: function () {
+                alert("UpdateProduct success");
+
+                $('#SubmitModal').modal('hide')
+
+                // 查詢產品清單
+                var formData2 = {
+                    product_pid: $('#sbPRODUCT_PID').val(),
+                };
+                $.ajax({
+                    url: '@Url.Action("QueryProductList", "Product")',
+                    type: 'GET',
+                    success: function (data) {
+                        var tableBody = $('#product-table tbody');
+                        tableBody.empty();
+
+                        $.each(data, function (index, product) {
+                            var row = '<tr>' +
+                                '<td>' + product.productID + '</td>' +
+                                '<td>' + product.name + '</td>' +
+                                '<td>' + product.productNumber + '</td>' +
+                                '<td>' + product.color + '</td>' +
+                                '<td>' + product.standardCost + '</td>' +
+                                '<td><a href="javascript:void(0);" class="btn btn-outline-dark" onclick="sbItem(' + product.productID + ')">編輯</a></td>' +
+                                '</tr>';
+                            tableBody.append(row);
+                        });
+
+                        $('#product-table').show();
+                    },
+                    error: function () {
+                        alert("Error retrieving data.");
+                    }
+                });
+            },
+            error: function () {
+                alert("UpdateProduct fail");
+            }
+        });      
+    }
+
+    // 取消
+    function cancelProduct() {
+        $('#sbPRODUCT_PID').val('');
+
+        $('#Modal_NAME').val('');
+        $('#Modal_PRODUCT_NUMBER').val('');
+        $('#Modal_COLOR').val('');
+        $('#Modal_STANDARD_COST').val('');
+        $('#Modal_LIST_PRICE').val('');
+        $('#Modal_SIZE').val('');
+        $('#Modal_WEIGHT').val('');
+        $('#Modal_SELL_START_DATE').val('');
+        $('#Modal_SELL_END_DATE').val('');
+        $('#Modal_DISCONTINUED_DATE').val('');
+        $('#Modal_THUMBNAIL_PHOTO').val('');
+        $('#Modal_THUMBNAIL_PHOTO_FILE_NAME').val('');
+
+        $('#SubmitModal').modal('hide')
+    }
+
+    function formatDate(inputString) {
+        // 將字串轉換成 Date 對象
+        let date = new Date(inputString);
+
+        // 檢查日期是否有效
+        if (!isNaN(date) && inputString != null) {
+            // 提取年、月、日，並格式化為 YYYY-MM-DD
+            let year = date.getFullYear();
+            let month = String(date.getMonth() + 1).padStart(2, '0'); // 月份 +1，補零
+            let day = String(date.getDate()).padStart(2, '0'); // 日補零
+
+            let formattedDate = `${year}-${month}-${day}`;
+            return formattedDate;
+        } else {
+            return ``;
+        }   
+    }
+
+</script>
